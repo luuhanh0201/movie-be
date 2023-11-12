@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { uploadImages,removeImages } from "../controllers/images";
+import { removeImages } from "../controllers/images";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import cloudinary from "../configs/cloudinaryConfig";
 import multer from "multer";
@@ -15,7 +15,7 @@ const storage = new CloudinaryStorage({
 })
 
 const upload = multer({ storage: storage })
-routerImages.post("/upload", upload.array("images",10), uploadImages)
+// routerImages.post("/upload", upload.array("images",10), uploadImages)
 routerImages.post("/remove", removeImages)
 
 export default routerImages

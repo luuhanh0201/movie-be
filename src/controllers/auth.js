@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
 import User from "../models/User"
 import { validSignUp } from "../validates/account"
+import { removeImages, uploadImage } from "./images"
 dotenv.config()
 const { SECRET_KEY } = process.env
 
@@ -29,6 +30,7 @@ export const signUp = async (req, res) => {
 
         // Bước 4: Tạo account cho người dùng:
         const user = await User.create({
+            _id,
             username: req.body.username,
             email: req.body.email,
             password: hashPassword,
@@ -103,7 +105,8 @@ export const getUser = async (req, res) => {
         }
         const showUser = data.map(user => {
             return {
-                userName: user.userName,
+                _id: user._id,
+                username: user.username,
                 email: user.email,
                 avatar: user.avatar,
                 numberPhone: user.numberPhone,
@@ -124,18 +127,33 @@ export const getUser = async (req, res) => {
 }
 export const updateUser = async (req, res) => {
     try {
-        const data = await User.findByIdAndUpdate(req.params.id, req.body, { new: true })
+        console.log("Update");
+        const { _id, email, ...updateData } = req.body;
+        const data = await User.findByIdAndUpdate(req.params.id, updateData, { new: true })
+        // console.log("data" + data);
         if (!data) {
             return res.status(404).json({
                 message: "users not found",
             })
         }
+
+
+        const base64String = req.body.avatar;
+        const base64Data = base64String.replace(/^data:image\/(png|gif|jpg|jpeg);base64,/, "");
+        const imageBuffer = Buffer.from(base64Data, "base64");
+
+        const imageUrl = await uploadImage(imageBuffer);
         const user = {
-            userName: data.userName,
+            _id: data._id,
+            username: data.username,
             email: data.email,
-            avatar: data.avatar,
             numberPhone: data.numberPhone,
+            address: data.address,
             role: data.role,
+            avatar: imageUrl || data.avatar
+        };
+        if (imageUrl && data.avatar) {
+            await removeImages(req, res, data.avatar);
         }
         return res.status(200).json({
             message: "Update successfully",
@@ -143,7 +161,8 @@ export const updateUser = async (req, res) => {
         })
     } catch (error) {
         return res.status(404).json({
-            message: error,
+            name: "error",
+            message: error.message
         })
     }
 }
@@ -156,6 +175,8 @@ export const getOne = async (req, res) => {
                 message: "user not found",
             })
         }
+
+        data.password = undefined
         return res.status(200).json({
             message: "get one user",
             data: data
@@ -169,7 +190,7 @@ export const getOne = async (req, res) => {
 
 export const remove = async (req, res) => {
     try {
-        const data = await Users.findByIdAndDelete(req.params.id)
+        const data = await User.findByIdAndDelete(req.params.id)
         if (!data) {
             return res.status(404).json({
                 message: "user not found",

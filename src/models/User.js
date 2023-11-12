@@ -15,16 +15,24 @@ const userSchema = new mongoose.Schema({
     },
 
     avatar: {
-        type: [String],
+        type: String,
         required: false
     },
     numberPhone: {
         type: String,
         required: false
     },
+    address: {
+        type: String,
+        required: false
+    },
     role: {
         type: String,
         default: "member",
+        required: false
+    },
+    description:{
+        type: String,
         required: false
     }
 
